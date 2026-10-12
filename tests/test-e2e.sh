@@ -9,6 +9,9 @@
 # namespace, so the test works with rootless podman and never touches the
 # host firewall.
 set -Eeuo pipefail
+# Read all input before deciding: "grep -q" exits at the first match, the
+# writer then dies of SIGPIPE and pipefail reports the match as a failure.
+contains() { grep -c -- "$1" >/dev/null; }
 root="$(cd "$(dirname "$0")/.." && pwd)"
 engine="${DOCKER:-podman}"
 cs_image="${CROWDSEC_IMAGE:-docker.io/crowdsecurity/crowdsec:v1.8.1-debian}"
@@ -117,7 +120,7 @@ YAML
 "$engine" run -d --name "$p-traefik" --network "$ns" -v "$work/traefik:/etc/traefik:ro" "$traefik_image" >/dev/null
 for _ in $(seq 1 60); do "$engine" exec "$p-hub" cscli lapi status >/dev/null 2>&1 && break; sleep 2; done
 "$engine" exec "$p-hub" cscli lapi status >/dev/null
-"$engine" exec "$p-hub" cscli bouncers list -o json | grep -q crowdsec_companion1_firewall
+"$engine" exec "$p-hub" cscli bouncers list -o json | contains crowdsec_companion1_firewall
 # What add-member does on the hub:
 "$engine" exec "$p-hub" cscli machines add member1 --password memberpass0123456789abcdefgh --force -f /dev/null >/dev/null
 "$engine" exec "$p-hub" cscli bouncers add member1-firewall --key memberbouncerkey0123456789 >/dev/null
@@ -144,13 +147,13 @@ done; done
 
 log "wait for the hub decision and the member firewall"
 for _ in $(seq 1 45); do
-    "$engine" exec "$p-tools" nft list ruleset 2>/dev/null | grep -q 203.0.113.50 && break; sleep 2
+    "$engine" exec "$p-tools" nft list ruleset 2>/dev/null | contains 203.0.113.50 && break; sleep 2
 done
 "$engine" exec "$p-hub" cscli decisions list -o raw | tee "$work/decisions.csv"
 grep -q '203.0.113.50,ns8/ns8-gitea-web-bf' "$work/decisions.csv"
 if grep -q '192.0.2.60' "$work/decisions.csv"; then echo "FAIL: allowlisted address banned"; exit 1; fi
-"$engine" exec "$p-hub" cscli alerts list -o json | grep -q "\"machine_id\": \"member1\"" || { echo "alert not attributed to member1"; exit 1; }
-"$engine" exec "$p-tools" nft list table ip crowdsec-companion | grep -q 203.0.113.50
+"$engine" exec "$p-hub" cscli alerts list -o json | contains "\"machine_id\": \"member1\"" || { echo "alert not attributed to member1"; exit 1; }
+"$engine" exec "$p-tools" nft list table ip crowdsec-companion | contains 203.0.113.50
 if "$engine" exec "$p-tools" sh -c 'echo x | nc -w 3 -s 203.0.113.50 127.0.0.1 9000'; then
     echo "FAIL: banned address still connects"; exit 1
 fi
@@ -160,14 +163,14 @@ echo "after ban: 203.0.113.50 is dropped"
 log "unban on the hub removes the block on the member"
 "$engine" exec "$p-hub" cscli decisions delete --ip 203.0.113.50 >/dev/null
 for _ in $(seq 1 30); do
-    "$engine" exec "$p-tools" nft list ruleset | grep -q 203.0.113.50 || break; sleep 2
+    "$engine" exec "$p-tools" nft list ruleset | contains 203.0.113.50 || break; sleep 2
 done
-if "$engine" exec "$p-tools" nft list ruleset | grep -q 203.0.113.50; then echo "FAIL: unbanned address still in nftables"; exit 1; fi
+if "$engine" exec "$p-tools" nft list ruleset | contains 203.0.113.50; then echo "FAIL: unbanned address still in nftables"; exit 1; fi
 "$engine" exec "$p-tools" sh -c 'echo x | nc -w 3 -s 203.0.113.50 127.0.0.1 9000' && echo "after unban: 203.0.113.50 connects"
 
 log "bouncer stop removes its nftables tables"
 "$engine" stop -t 20 "$p-member-bouncer" >/dev/null
-if "$engine" exec "$p-tools" nft list tables | grep -q companion; then
+if "$engine" exec "$p-tools" nft list tables | contains companion; then
     echo "NOTE: tables remain after bouncer stop:"; "$engine" exec "$p-tools" nft list tables
 else
     echo "tables removed on stop"

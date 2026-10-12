@@ -1,6 +1,9 @@
 #!/bin/bash
 # Runs only inside the disposable CI VM (a fresh single-node NS8 leader).
 set -Eeuo pipefail
+# Read all input before deciding: "grep -q" exits at the first match, the
+# writer then dies of SIGPIPE and pipefail reports the match as a failure.
+contains() { grep -c -- "$1" >/dev/null; }
 image="${1:?module image}"
 step() { printf '\n=== %s\n' "$*"; }
 fail() { echo "FAIL: $*" >&2; exit 1; }
@@ -23,7 +26,7 @@ for unit in "$module.service" "$module-bouncer.service" "$module-refresh.timer";
     systemctl is-active --quiet "$unit" || fail "$unit is not active"
 done
 runagent -m "$module" podman exec "$module" cscli lapi status
-runagent -m "$module" podman exec "$module" cscli bouncers list -o json | grep -q firewall || fail "local bouncer not registered"
+runagent -m "$module" podman exec "$module" cscli bouncers list -o json | contains firewall || fail "local bouncer not registered"
 wait_for 60 "nftables table" nft list table ip crowdsec-companion
 state=/var/lib/nethserver/$module/state
 grep -q 'CONTAINER_NAME=traefik' "$state/crowdsec_config/acquis.yaml" || fail "Traefik journal source not discovered"
@@ -81,17 +84,17 @@ resolve=(--resolve "$hub_host:443:127.0.0.1")
 login_code="$(curl -sk "${resolve[@]}" -o /tmp/csc-login.json -w '%{http_code}' -H 'Content-Type: application/json' \
     -d "{\"machine_id\":\"$machine\",\"password\":\"$password\"}" "https://$hub_host/v1/watchers/login")"
 [[ "$login_code" == 200 ]] || { cat /tmp/csc-login.json; fail "member machine login returned $login_code"; }
-curl -sk "${resolve[@]}" -H "X-Api-Key: $bouncer_key" "https://$hub_host/v1/decisions/stream?startup=true" | grep -q 198.51.100.2 \
+curl -sk "${resolve[@]}" -H "X-Api-Key: $bouncer_key" "https://$hub_host/v1/decisions/stream?startup=true" | contains 198.51.100.2 \
     || fail "member bouncer key cannot read the ban list"
 bad="$(curl -sk "${resolve[@]}" -o /dev/null -w '%{http_code}' -H 'X-Api-Key: wrong' "https://$hub_host/v1/decisions/stream?startup=true")"
 [[ "$bad" == 403 || "$bad" == 401 ]] || fail "wrong bouncer key returned $bad"
-api-cli run "module/$module/list-members" | grep -q ci-member || fail "member not listed"
+api-cli run "module/$module/list-members" | contains ci-member || fail "member not listed"
 api-cli run "module/$module/remove-member" --data '{"name":"ci-member"}'
 gone="$(curl -sk "${resolve[@]}" -o /dev/null -w '%{http_code}' -H "X-Api-Key: $bouncer_key" "https://$hub_host/v1/decisions/stream?startup=true")"
 [[ "$gone" == 403 || "$gone" == 401 ]] || fail "removed member bouncer still has access ($gone)"
 
 step "unban restores access"
-api-cli run "module/$module/list-decisions" | grep -q 198.51.100.2 || fail "list-decisions misses the ban"
+api-cli run "module/$module/list-decisions" | contains 198.51.100.2 || fail "list-decisions misses the ban"
 api-cli run "module/$module/unban" --data '{"addresses":["198.51.100.2"]}'
 wait_for 40 "nftables unban" sh -c "! nft list table ip crowdsec-companion | grep -q 198.51.100.2"
 code="$(login)" || true
@@ -105,7 +108,7 @@ for _ in 1 2 3 4 5 6; do
         -d '{"username":"admin","password":"x"}' https://198.51.100.1/cluster-admin/api/login || true
 done
 sleep 20
-if decisions | grep -q 192.0.2.9; then fail "allowlisted address was banned"; fi
+if decisions | contains 192.0.2.9; then fail "allowlisted address was banned"; fi
 
 step "restart keeps working without changes"
 systemctl restart "$module.service"
