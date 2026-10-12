@@ -1,0 +1,22 @@
+# Samba JSON authentication audit (auth_json_audit >= 2) from the samba-dc
+# container. The record is decoded as JSON, so values chosen by a client
+# (account names) stay inside their JSON strings.
+name: ns8/samba-audit
+description: "Parse failed Samba authentications from the JSON audit log"
+filter: >-
+  evt.Line.Labels.ns8_source == 'samba'
+  && trim(evt.Parsed.message) startsWith '{'
+  && UnmarshalJSON(trim(evt.Parsed.message), evt.Unmarshaled, 'samba') in ['', nil]
+  && evt.Unmarshaled.samba?.type == 'Authentication'
+  && evt.Unmarshaled.samba?.Authentication?.status in ['NT_STATUS_LOGON_FAILURE', 'NT_STATUS_WRONG_PASSWORD', 'NT_STATUS_NO_SUCH_USER', 'NT_STATUS_ACCOUNT_LOCKED_OUT']
+  && evt.Unmarshaled.samba?.Authentication?.remoteAddress matches '^ipv[46]:[0-9a-fA-F:.]+:[0-9]+$'
+onsuccess: next_stage
+statics:
+  - meta: log_type
+    value: ns8_samba_auth_fail
+  - meta: service
+    value: samba
+  - meta: source_ip
+    expression: "evt.Unmarshaled.samba.Authentication.remoteAddress[5:lastIndexOf(evt.Unmarshaled.samba.Authentication.remoteAddress, ':')]"
+  - meta: user
+    expression: "evt.Unmarshaled.samba.Authentication.clientAccount ?? ''"

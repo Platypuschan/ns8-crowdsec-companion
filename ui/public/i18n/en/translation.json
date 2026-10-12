@@ -1,0 +1,119 @@
+{
+  "settings": {
+    "title": "Settings"
+  },
+  "status": {
+    "title": "Status"
+  },
+  "about": {
+    "title": "About"
+  },
+  "members": {
+    "title": "Members"
+  },
+  "bans": {
+    "title": "Bans"
+  },
+  "action": {
+    "get-name": "Read module name",
+    "configure-module": "Configure module",
+    "add-member": "Add member",
+    "remove-member": "Remove member",
+    "unban": "Unban addresses"
+  },
+  "task": {
+    "cannot_create_task": "Cannot create task: {action}"
+  },
+  "c": {
+    "intro": "Shares CrowdSec bans between your NethServer 8 hosts and other servers through one private hub. Nothing is sent to the CrowdSec cloud.",
+    "aboutSources": "Failed logins are detected from SSH, the NS8 admin login, Gitea and Organizr (through the Traefik access log) and Samba (JSON authentication audit). Any member's detection bans the address on every member.",
+    "aboutCloud": "The CrowdSec Central API, community blocklist and console enrollment are always disabled.",
+    "documentation": "Documentation",
+    "error": "Error",
+    "ready": "Ready",
+    "refresh": "Refresh",
+    "save": "Save",
+    "saved": "Settings saved",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "timeout": "The task did not finish in time",
+    "taskError": "The task failed",
+    "validationFailed": "Please check the highlighted fields",
+    "role": "Role",
+    "roleHelp": "Install the companion on every host. One instance is the hub: it stores the shared ban list and receives the detections of all members. The others connect to it as members.",
+    "hub": "Hub (stores the shared ban list)",
+    "member": "Member (connects to a hub)",
+    "roleFixed": "The role cannot be changed after setup. Install a new instance to change it.",
+    "hubSettings": "Hub",
+    "hubHost": "Public host name of the hub",
+    "hubHostHelp": "Point this DNS name to this node. Members connect to https://<host>/; NS8 Traefik provides HTTPS.",
+    "letsEncrypt": "Request a Let's Encrypt certificate",
+    "memberSettings": "Connection to the hub",
+    "connectedTo": "Connected to",
+    "as": "as",
+    "token": "Member token",
+    "tokenHelp": "Create the token on the hub under Members and paste it here.",
+    "tokenKeep": "Leave empty to keep the current connection.",
+    "insecure": "Accept an untrusted hub certificate (testing only)",
+    "protection": "Protection",
+    "banDuration": "Ban duration",
+    "banDurationHelp": "Minutes or hours, for example 30m or 4h. Applied by the hub to every new ban.",
+    "allowlist": "Allowlist",
+    "allowlistHelp": "Addresses and networks that are never banned on any member, one per line. Private networks are allowlisted automatically.",
+    "allowlistMember": "The allowlist is managed on the hub.",
+    "sambaAudit": "Detect failed Samba logins",
+    "sambaAuditHelp": "Raises Samba's JSON authentication audit level in the running Samba process of this node. The saved Samba configuration is not changed.",
+    "membersHelp": "Each member uses its own credentials. Remove a member to revoke its access.",
+    "hubOnly": "This page is available on the hub only.",
+    "addMember": "Add a member",
+    "memberName": "Name",
+    "memberNameHelp": "Lowercase letters, digits and dashes, for example the host name.",
+    "createToken": "Create token",
+    "tokenOnce": "Copy the token now",
+    "tokenOnceHelp": "It is shown only once. Paste it into the member's settings.",
+    "manualSetup": "For a server without NS8, put these values into the CrowdSec agent and firewall bouncer configuration:",
+    "connected": "Members",
+    "name": "Name",
+    "address": "Address",
+    "lastAlert": "Last alert",
+    "lastHeartbeat": "Last heartbeat",
+    "lastPull": "Last ban list update",
+    "thisHub": "this hub",
+    "remove": "Remove",
+    "confirmRemove": "Remove member {name}? Its agent and firewall bouncer lose access to the hub.",
+    "bansHelp": "Bans active on all members. Unbanning here removes the address from every member's firewall within seconds.",
+    "unban": "Unban selected",
+    "search": "Search",
+    "selectAll": "Select all",
+    "reason": "Reason",
+    "detectedBy": "Detected by",
+    "country": "Country",
+    "remaining": "Remaining",
+    "noBans": "No active bans.",
+    "notConfigured": "The module is not configured yet.",
+    "hubUrl": "Hub URL",
+    "apiConnection": "Connection to the hub API",
+    "activeBans": "Active bans",
+    "membersCount": "Registered agents",
+    "sources": "Detection sources",
+    "services": "Services",
+    "kind": {
+      "traefik": "Traefik (NS8 admin, Gitea, Organizr)",
+      "gitea": "Gitea",
+      "organizr": "Organizr",
+      "samba": "Samba"
+    },
+    "err": {
+      "invalid_role": "Choose a role",
+      "role_is_fixed": "The role cannot be changed",
+      "invalid_duration": "Use minutes or hours, for example 30m or 4h",
+      "invalid_address": "Enter IP addresses or networks only",
+      "invalid_host": "Enter a valid host name",
+      "invalid_token": "This token is not valid",
+      "token_required": "A member token is required",
+      "hub_only": "Only available on the hub",
+      "invalid_member_name": "Use lowercase letters, digits and dashes",
+      "member_exists": "A member with this name already exists"
+    }
+  }
+}

@@ -1,0 +1,37 @@
+# NS8 Traefik access log (common log format) from the traefik container.
+# Traefik writes these records itself and NS8 drops request headers from the
+# log, so clients cannot forge them. The final router/backend/duration fields
+# are matched from the end of the line, after any quoted client data.
+name: ns8/traefik-access
+description: "Parse the NS8 Traefik access log"
+filter: "evt.Line.Labels.ns8_source == 'traefik'"
+onsuccess: next_stage
+pattern_syntax:
+  NS8_IP: '[0-9a-fA-F.:]+'
+  NS8_BRACKETED: '[^\]]+'
+  NS8_VERB: '[A-Z]+'
+  NS8_TARGET: '\S+'
+  NS8_STATUS: '[0-9]{3}'
+  NS8_QVALUE: '[^"\\]*'
+  NS8_CLF: '^%{NS8_IP:client_ip} - \S+ \[%{NS8_BRACKETED:timestamp}\] "%{NS8_VERB:verb} %{NS8_TARGET:request} HTTP/[0-9.]+" %{NS8_STATUS:status} \S+ "(?:[^"\\]|\\.)*" "(?:[^"\\]|\\.)*" [0-9]+ "%{NS8_QVALUE:router}" "%{NS8_QVALUE:backend}" [0-9]+ms$'
+nodes:
+  - grok:
+      name: NS8_CLF
+      apply_on: message
+statics:
+  - meta: log_type
+    value: ns8_traefik_access
+  - meta: service
+    value: ns8_traefik
+  - meta: source_ip
+    expression: evt.Parsed.client_ip
+  - meta: http_status
+    expression: evt.Parsed.status
+  - meta: http_verb
+    expression: evt.Parsed.verb
+  - meta: http_path
+    expression: "split(evt.Parsed.request, '?')[0]"
+  - meta: ns8_router
+    expression: evt.Parsed.router
+  - meta: ns8_backend
+    expression: evt.Parsed.backend

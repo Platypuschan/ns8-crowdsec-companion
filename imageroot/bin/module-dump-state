@@ -1,0 +1,5 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Called by NS8 before a backup: consistent copy of the CrowdSec database.
+set -euo pipefail
+exec python3 -m cscompanion.actions module-dump-state </dev/null

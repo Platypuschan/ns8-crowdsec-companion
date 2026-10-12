@@ -1,0 +1,135 @@
+name: Validate module
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  tests:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Check catalog version
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+          REF_NAME: ${{ github.ref_name }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          set -Eeuo pipefail
+          if [[ "$EVENT_NAME" == "pull_request" ]]; then
+            .github/scripts/check-catalog-version --base "origin/$BASE_REF"
+          elif [[ "$REF_NAME" != "$DEFAULT_BRANCH" ]]; then
+            .github/scripts/check-catalog-version --base "origin/$DEFAULT_BRANCH"
+          else
+            .github/scripts/check-catalog-version
+          fi
+      - name: Unit tests
+        run: PYTHONPATH=imageroot/pypkg python3 -m unittest discover -s tests -p 'test_*.py' -v
+      - name: Shell scripts
+        run: shellcheck build-images.sh test-module*.sh tests/*.sh imageroot/actions/*/50execute imageroot/bin/* imageroot/update-module.d/*
+      - name: Detection rules replayed in the pinned CrowdSec image
+        run: bash tests/test-rules.sh
+      - name: Hub, member, Traefik TLS and nftables end to end
+        run: bash tests/test-e2e.sh
+  ui:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+      - run: corepack enable
+      - run: yarn install --immutable
+        working-directory: ui
+      - run: yarn exec eslint --max-warnings 0 --ext .js,.vue src
+        working-directory: ui
+      - name: Build without browser-incompatible Node modules
+        working-directory: ui
+        run: |
+          yarn build 2>&1 | tee build.log
+          ! grep -i "externalized for browser compatibility" build.log
+      - name: Check the PNG logo required by NS8 module discovery
+        run: test -n "$(find ui/dist/img -name '*logo*.png' -print -quit)"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: module-ui
+          path: ui/dist
+  images:
+    needs: [tests, ui]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      module: ${{ steps.publish.outputs.module }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: module-ui
+          path: ui/dist
+      - name: Build the NS8 module image
+        id: build
+        run: ./build-images.sh
+        env:
+          REPOBASE: ghcr.io/${{ github.repository_owner }}
+      # The QEMU node pulls the module from GHCR. Pull requests only build;
+      # their branch push runs the VM test.
+      - name: Publish the image under test
+        id: publish
+        if: github.event_name != 'pull_request'
+        run: |
+          printf '%s' "$REGISTRY_TOKEN" | buildah login --username "$GITHUB_ACTOR" --password-stdin ghcr.io
+          tag="sha-$(git rev-parse --short=12 HEAD)"
+          buildah push "$MODULE" "docker://$MODULE:$tag"
+          printf 'module=%s:%s\n' "$MODULE" "$tag" >> "$GITHUB_OUTPUT"
+        env:
+          MODULE: ${{ steps.build.outputs.module }}
+          REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  ns8:
+    name: NS8
+    needs: images
+    if: github.event_name != 'pull_request'
+    strategy:
+      fail-fast: false
+      matrix:
+        distro: [rocky9, debian13]
+        scenario: [install]
+    permissions:
+      contents: read
+      statuses: write
+    uses: NethServer/ns8-github-actions/.github/workflows/test-on-qemu.yml@v1
+    with:
+      distro: ${{ matrix.distro }}
+      image_url: ${{ needs.images.outputs.module }}
+      repo_ref: ${{ github.sha }}
+      version_tag: ${{ github.ref_name }}
+      artifact_suffix: ${{ matrix.scenario }}
+      status_suffix: ${{ matrix.scenario }}
+      script: test-module-${{ matrix.scenario }}.sh
+      timeout_minutes: 60
+  publish-development-image:
+    needs: [images, ns8]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Publish the tested module as dev
+        run: |
+          if [[ "$(git ls-remote "https://github.com/$GITHUB_REPOSITORY" refs/heads/main | cut -f1)" != "$GITHUB_SHA" ]]; then
+            echo 'A newer main commit exists; skip this development image.'
+            exit 0
+          fi
+          printf '%s' "$REGISTRY_TOKEN" | skopeo login --username "$GITHUB_ACTOR" --password-stdin ghcr.io
+          skopeo copy --all "docker://$MODULE" "docker://${MODULE%:*}:dev"
+          echo "Published ${MODULE%:*}:dev from $MODULE" >> "$GITHUB_STEP_SUMMARY"
+        env:
+          MODULE: ${{ needs.images.outputs.module }}
+          REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}

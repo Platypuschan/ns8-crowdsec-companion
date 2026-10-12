@@ -1,0 +1,20 @@
+# Samba/Active Directory authentication brute force
+{
+  "type": "leaky",
+  "name": "ns8/ns8-samba-bf",
+  "description": "Samba/Active Directory authentication brute force",
+  "filter": "evt.Meta.log_type == 'ns8_samba_auth_fail'",
+  "groupby": "evt.Meta.source_ip",
+  "capacity": 4,
+  "leakspeed": "2m",
+  "blackhole": "1m",
+  "labels": {
+    "service": "ns8",
+    "behavior": "generic:bruteforce",
+    "classification": [
+      "attack.T1110"
+    ],
+    "label": "Samba/Active Directory authentication brute force",
+    "remediation": true
+  }
+}

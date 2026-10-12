@@ -1,0 +1,20 @@
+# NS8 cluster-admin login brute force
+{
+  "type": "leaky",
+  "name": "ns8/ns8-admin-bf",
+  "description": "NS8 cluster-admin login brute force",
+  "filter": "evt.Meta.log_type == 'ns8_traefik_access' && evt.Meta.ns8_router == 'cluster-admin-https@file' && evt.Meta.ns8_backend == 'http://127.0.0.1:9311' && evt.Meta.http_verb == 'POST' && evt.Meta.http_path == '/cluster-admin/api/login' && evt.Meta.http_status == '401'",
+  "groupby": "evt.Meta.source_ip",
+  "capacity": 4,
+  "leakspeed": "2m",
+  "blackhole": "1m",
+  "labels": {
+    "service": "ns8",
+    "behavior": "http:bruteforce",
+    "classification": [
+      "attack.T1110"
+    ],
+    "label": "NS8 cluster-admin login brute force",
+    "remediation": true
+  }
+}
