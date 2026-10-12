@@ -58,10 +58,24 @@ login() {
 code="$(login)" || true
 [[ "$code" == 401 ]] || fail "expected 401 from the NS8 admin login, got '$code'"
 
-step "five failed NS8 admin logins"
-for _ in 1 2 3 4; do login >/dev/null || true; done
+step "the agent reads the host journal"
+# Same journalctl the agent runs, inside the CrowdSec container.
+seen="$(podman exec "$module" journalctl -q --no-pager -o cat -n 3 CONTAINER_NAME=traefik "_UID=$(id -u traefik1)" 2>&1 || true)"
+echo "$seen"
+grep -q 'cluster-admin' <<<"$seen" || fail "journalctl inside the CrowdSec container cannot read the Traefik journal"
+podman logs "$module" 2>&1 | grep -E "journalctl|Starting processing data" | head -5
+
+step "failed NS8 admin logins until banned"
 decisions() { runagent -m "$module" podman exec "$module" cscli decisions list -o raw; }
-wait_for 90 "ban of 198.51.100.2" sh -c "runagent -m $module podman exec $module cscli decisions list -o raw | grep -q '198.51.100.2,ns8/ns8-admin-bf'"
+banned() { decisions | contains '198.51.100.2,ns8/ns8-admin-bf'; }
+# Like the upstream CrowdSec module tests: retry, since lines written while
+# the agent (re)starts are never read (journalctl -n 0).
+for try in 1 2 3 4; do
+    for _ in 1 2 3 4 5; do login >/dev/null || true; done
+    for _ in $(seq 1 20); do banned && break 2; sleep 1; done
+    echo "no ban after attempt $try"
+done
+banned || fail "198.51.100.2 was not banned"
 decisions
 wait_for 40 "nftables ban" sh -c "nft list table ip crowdsec-companion | grep -q 198.51.100.2"
 code="$(login)" || true

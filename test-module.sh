@@ -25,7 +25,10 @@ ssh_node bash /tmp/ns8-smoke.sh "${IMAGE_URL}" || status=$?
 # Keep diagnostics for the workflow artifacts, also after a failure.
 # shellcheck disable=SC2016 # expanded on the node
 ssh_node 'module=$(cat /tmp/csc-module-id 2>/dev/null); [[ -n "$module" ]] || exit 0
-  journalctl --no-pager -n 400 -u "$module.service" -u "$module-bouncer.service" -u "$module-refresh.service"
+  echo "--- crowdsec startup and sources"; podman logs "$module" 2>&1 | grep -vE "module=lapi|Adding (leaky|trigger|conditional) bucket" | head -150
+  echo "--- crowdsec warnings"; podman logs "$module" 2>&1 | grep -E "level=(warning|error|fatal)" | tail -40
+  echo "--- units"; journalctl --no-pager -n 150 -u "$module.service" -u "$module-bouncer.service" -u "$module-refresh.service"
+  echo "--- journal read inside the container"; podman exec "$module" journalctl -q --no-pager -n 3 CONTAINER_NAME=traefik
   echo "--- acquisition"; cat "/var/lib/nethserver/$module/state/crowdsec_config/acquis.yaml"
   echo "--- discovery"; cat "/var/lib/nethserver/$module/state/discovery.json"
   echo "--- traefik journal fields"; journalctl --no-pager -o json -n 3 CONTAINER_NAME=traefik | head -c 3000' \

@@ -62,7 +62,10 @@ def units():
         " --log-driver=journald %s"
     ) % (module, state, image("CROWDSEC_FIREWALL_BOUNCER_IMAGE"))
     refresh = "/usr/local/bin/runagent -m %s python3 -m cscompanion.refresh" % module
-    common = "StartLimitIntervalSec=0\n\n[Service]\nRestart=always\nRestartSec=10\nTimeoutStopSec=40\n"
+    # The journald log driver records the container output; systemd would log
+    # the same lines a second time from the attached podman process.
+    common = ("StartLimitIntervalSec=0\n\n[Service]\nRestart=always\nRestartSec=10\nTimeoutStopSec=40\n"
+              "StandardOutput=null\n")
     return {
         module + ".service": (
             "[Unit]\nDescription=CrowdSec companion engine (%s)\nAfter=network-online.target\nWants=network-online.target\n%s"
@@ -126,6 +129,21 @@ def wait_lapi(timeout=180):
     raise RuntimeError("CrowdSec API is not reachable: " + last)
 
 
+def wait_agent(timeout=240):
+    """Wait until the agent reads its log sources.
+
+    The journal sources start at the end of the journal ("journalctl -n 0"),
+    so lines written before this point are never read.
+    """
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        result = run(["podman", "logs", module_id()], check=False, timeout=60)
+        if "Starting processing data" in result.stdout + result.stderr:
+            return True
+        time.sleep(3)
+    raise RuntimeError("CrowdSec did not start reading its log sources")
+
+
 def apply(cfg, restart=False):
     """Render configuration and bring the services to the configured state."""
     module = module_id()
@@ -138,6 +156,7 @@ def apply(cfg, restart=False):
     elif result["reload"]:
         run(["podman", "kill", "--signal", "HUP", module], check=False)
     wait_lapi()
+    wait_agent()
     if cfg["role"] == "hub":
         sync_allowlist(cfg)
     systemctl("enable", module + "-bouncer.service")

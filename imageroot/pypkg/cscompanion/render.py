@@ -43,8 +43,9 @@ def config_local(cfg):
         # outside and replaces any X-Forwarded-For sent by the remote client.
         # X-Forwarded-For is honoured only from loopback (Traefik); CrowdSec's
         # default would trust it from any IPv4 source.
+        # log_level error: the access log would record every bouncer poll.
         data["api"] = {"server": {"listen_uri": "127.0.0.1:%d" % lapi, "use_forwarded_for_headers": True,
-                                  "trusted_proxies": ["127.0.0.1/32", "::1/128"]}}
+                                  "trusted_proxies": ["127.0.0.1/32", "::1/128"], "log_level": "error"}}
     return yaml_doc(data)
 
 

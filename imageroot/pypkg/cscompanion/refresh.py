@@ -13,6 +13,8 @@ def main():
     result = render.render_all(cfg, module, state_dir())
     if result["restart"]:
         lifecycle.systemctl("restart", module + ".service")
+        lifecycle.wait_lapi()
+        lifecycle.wait_agent()
     elif result["reload"]:
         # SIGHUP reloads acquisition, parsers and scenarios without dropping the LAPI.
         lifecycle.run(["podman", "kill", "--signal", "HUP", module], check=False)
