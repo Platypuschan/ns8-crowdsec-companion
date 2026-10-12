@@ -1,0 +1,21 @@
+{
+  "name": "CrowdSec Companion",
+  "description": {
+    "en": "Share CrowdSec bans between your NethServer 8 hosts and other servers through one private hub, without the CrowdSec cloud.",
+    "de": "Teilt CrowdSec-Sperren zwischen deinen NethServer-8-Hosts und anderen Servern über einen privaten Hub, ohne CrowdSec-Cloud."
+  },
+  "categories": [
+    "security"
+  ],
+  "authors": [
+    {
+      "name": "Platypuschan"
+    }
+  ],
+  "docs": {
+    "documentation_url": "https://github.com/Platypuschan/ns8-crowdsec-companion#readme",
+    "bug_url": "https://github.com/Platypuschan/ns8-crowdsec-companion/issues",
+    "code_url": "https://github.com/Platypuschan/ns8-crowdsec-companion"
+  },
+  "source": "ghcr.io/platypuschan/crowdsec-companion"
+}

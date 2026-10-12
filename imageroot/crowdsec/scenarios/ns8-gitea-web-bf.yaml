@@ -1,0 +1,20 @@
+# Gitea web login brute force (failed login form posts return 200)
+{
+  "type": "leaky",
+  "name": "ns8/ns8-gitea-web-bf",
+  "description": "Gitea web login brute force (failed login form posts return 200)",
+  "filter": "evt.Meta.log_type == 'ns8_traefik_access' && evt.Meta.ns8_app == 'gitea' && evt.Meta.http_verb == 'POST' && evt.Meta.http_path == '/user/login' && evt.Meta.http_status == '200'",
+  "groupby": "evt.Meta.source_ip",
+  "capacity": 4,
+  "leakspeed": "2m",
+  "blackhole": "1m",
+  "labels": {
+    "service": "ns8",
+    "behavior": "http:bruteforce",
+    "classification": [
+      "attack.T1110"
+    ],
+    "label": "Gitea web login brute force (failed login form posts return 200)",
+    "remediation": true
+  }
+}

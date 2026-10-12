@@ -1,0 +1,20 @@
+# Gitea git/API credential brute force (bursts of 401 responses)
+{
+  "type": "leaky",
+  "name": "ns8/ns8-gitea-http-auth-bf",
+  "description": "Gitea git/API credential brute force (bursts of 401 responses)",
+  "filter": "evt.Meta.log_type == 'ns8_traefik_access' && evt.Meta.ns8_app == 'gitea' && evt.Meta.http_status == '401' && (evt.Meta.http_path startsWith '/api/' || evt.Meta.http_path contains '.git/' || evt.Meta.http_path endsWith '.git')",
+  "groupby": "evt.Meta.source_ip",
+  "capacity": 30,
+  "leakspeed": "5s",
+  "blackhole": "1m",
+  "labels": {
+    "service": "ns8",
+    "behavior": "vcs:bruteforce",
+    "classification": [
+      "attack.T1110"
+    ],
+    "label": "Gitea git/API credential brute force (bursts of 401 responses)",
+    "remediation": true
+  }
+}

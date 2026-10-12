@@ -1,0 +1,20 @@
+# Organizr login brute force
+{
+  "type": "leaky",
+  "name": "ns8/ns8-organizr-bf",
+  "description": "Organizr login brute force",
+  "filter": "evt.Meta.log_type == 'ns8_traefik_access' && evt.Meta.ns8_app == 'organizr' && evt.Meta.http_verb == 'POST' && evt.Meta.http_path == '/api/v2/login' && evt.Meta.http_status == '401'",
+  "groupby": "evt.Meta.source_ip",
+  "capacity": 4,
+  "leakspeed": "2m",
+  "blackhole": "1m",
+  "labels": {
+    "service": "ns8",
+    "behavior": "http:bruteforce",
+    "classification": [
+      "attack.T1110"
+    ],
+    "label": "Organizr login brute force",
+    "remediation": true
+  }
+}

@@ -1,0 +1,119 @@
+{
+  "settings": {
+    "title": "Einstellungen"
+  },
+  "status": {
+    "title": "Status"
+  },
+  "about": {
+    "title": "Über"
+  },
+  "members": {
+    "title": "Mitglieder"
+  },
+  "bans": {
+    "title": "Sperren"
+  },
+  "action": {
+    "get-name": "Modulname lesen",
+    "configure-module": "Modul konfigurieren",
+    "add-member": "Mitglied hinzufügen",
+    "remove-member": "Mitglied entfernen",
+    "unban": "Sperren aufheben"
+  },
+  "task": {
+    "cannot_create_task": "Aufgabe kann nicht erstellt werden: {action}"
+  },
+  "c": {
+    "intro": "Teilt CrowdSec-Sperren zwischen deinen NethServer-8-Hosts und anderen Servern über einen privaten Hub. Es wird nichts an die CrowdSec-Cloud gesendet.",
+    "aboutSources": "Fehlgeschlagene Anmeldungen werden bei SSH, der NS8-Admin-Anmeldung, Gitea und Organizr (über das Traefik-Zugriffsprotokoll) und Samba (JSON-Authentifizierungsaudit) erkannt. Die Erkennung eines Mitglieds sperrt die Adresse auf allen Mitgliedern.",
+    "aboutCloud": "Die CrowdSec Central API, die Community-Blocklist und die Konsolen-Anbindung sind immer deaktiviert.",
+    "documentation": "Dokumentation",
+    "error": "Fehler",
+    "ready": "Bereit",
+    "refresh": "Aktualisieren",
+    "save": "Speichern",
+    "saved": "Einstellungen gespeichert",
+    "enabled": "Aktiv",
+    "disabled": "Inaktiv",
+    "timeout": "Die Aufgabe wurde nicht rechtzeitig fertig",
+    "taskError": "Die Aufgabe ist fehlgeschlagen",
+    "validationFailed": "Bitte die markierten Felder prüfen",
+    "role": "Rolle",
+    "roleHelp": "Installiere den Companion auf jedem Host. Eine Instanz ist der Hub: Er speichert die gemeinsame Sperrliste und empfängt die Erkennungen aller Mitglieder. Die anderen verbinden sich als Mitglieder.",
+    "hub": "Hub (speichert die gemeinsame Sperrliste)",
+    "member": "Mitglied (verbindet sich mit einem Hub)",
+    "roleFixed": "Die Rolle kann nach der Einrichtung nicht geändert werden. Installiere dafür eine neue Instanz.",
+    "hubSettings": "Hub",
+    "hubHost": "Öffentlicher Hostname des Hubs",
+    "hubHostHelp": "Diesen DNS-Namen auf diesen Knoten zeigen lassen. Mitglieder verbinden sich mit https://<host>/; NS8 Traefik stellt HTTPS bereit.",
+    "letsEncrypt": "Let's-Encrypt-Zertifikat anfordern",
+    "memberSettings": "Verbindung zum Hub",
+    "connectedTo": "Verbunden mit",
+    "as": "als",
+    "token": "Mitglieds-Token",
+    "tokenHelp": "Erstelle den Token auf dem Hub unter Mitglieder und füge ihn hier ein.",
+    "tokenKeep": "Leer lassen, um die bestehende Verbindung zu behalten.",
+    "insecure": "Nicht vertrauenswürdiges Hub-Zertifikat akzeptieren (nur zum Testen)",
+    "protection": "Schutz",
+    "banDuration": "Sperrdauer",
+    "banDurationHelp": "Minuten oder Stunden, z. B. 30m oder 4h. Der Hub wendet sie auf jede neue Sperre an.",
+    "allowlist": "Ausnahmeliste",
+    "allowlistHelp": "Adressen und Netze, die auf keinem Mitglied gesperrt werden, eine pro Zeile. Private Netze sind automatisch ausgenommen.",
+    "allowlistMember": "Die Ausnahmeliste wird auf dem Hub verwaltet.",
+    "sambaAudit": "Fehlgeschlagene Samba-Anmeldungen erkennen",
+    "sambaAuditHelp": "Erhöht die JSON-Authentifizierungsaudit-Stufe im laufenden Samba-Prozess dieses Knotens. Die gespeicherte Samba-Konfiguration bleibt unverändert.",
+    "membersHelp": "Jedes Mitglied hat eigene Zugangsdaten. Entferne ein Mitglied, um seinen Zugriff zu widerrufen.",
+    "hubOnly": "Diese Seite ist nur auf dem Hub verfügbar.",
+    "addMember": "Mitglied hinzufügen",
+    "memberName": "Name",
+    "memberNameHelp": "Kleinbuchstaben, Ziffern und Bindestriche, z. B. der Hostname.",
+    "createToken": "Token erstellen",
+    "tokenOnce": "Token jetzt kopieren",
+    "tokenOnceHelp": "Er wird nur einmal angezeigt. Füge ihn in den Einstellungen des Mitglieds ein.",
+    "manualSetup": "Für einen Server ohne NS8 diese Werte in die Konfiguration von CrowdSec-Agent und Firewall-Bouncer eintragen:",
+    "connected": "Mitglieder",
+    "name": "Name",
+    "address": "Adresse",
+    "lastAlert": "Letzte Meldung",
+    "lastHeartbeat": "Letztes Lebenszeichen",
+    "lastPull": "Letzte Sperrlisten-Abfrage",
+    "thisHub": "dieser Hub",
+    "remove": "Entfernen",
+    "confirmRemove": "Mitglied {name} entfernen? Agent und Firewall-Bouncer verlieren den Zugriff auf den Hub.",
+    "bansHelp": "Auf allen Mitgliedern aktive Sperren. Eine Freigabe hier entfernt die Adresse innerhalb von Sekunden aus der Firewall jedes Mitglieds.",
+    "unban": "Auswahl freigeben",
+    "search": "Suchen",
+    "selectAll": "Alle auswählen",
+    "reason": "Grund",
+    "detectedBy": "Erkannt von",
+    "country": "Land",
+    "remaining": "Restdauer",
+    "noBans": "Keine aktiven Sperren.",
+    "notConfigured": "Das Modul ist noch nicht konfiguriert.",
+    "hubUrl": "Hub-URL",
+    "apiConnection": "Verbindung zur Hub-API",
+    "activeBans": "Aktive Sperren",
+    "membersCount": "Registrierte Agenten",
+    "sources": "Erkennungsquellen",
+    "services": "Dienste",
+    "kind": {
+      "traefik": "Traefik (NS8-Admin, Gitea, Organizr)",
+      "gitea": "Gitea",
+      "organizr": "Organizr",
+      "samba": "Samba"
+    },
+    "err": {
+      "invalid_role": "Rolle wählen",
+      "role_is_fixed": "Die Rolle kann nicht geändert werden",
+      "invalid_duration": "Minuten oder Stunden angeben, z. B. 30m oder 4h",
+      "invalid_address": "Nur IP-Adressen oder Netze eingeben",
+      "invalid_host": "Gültigen Hostnamen eingeben",
+      "invalid_token": "Dieser Token ist ungültig",
+      "token_required": "Ein Mitglieds-Token ist erforderlich",
+      "hub_only": "Nur auf dem Hub verfügbar",
+      "invalid_member_name": "Kleinbuchstaben, Ziffern und Bindestriche verwenden",
+      "member_exists": "Ein Mitglied mit diesem Namen existiert bereits"
+    }
+  }
+}
