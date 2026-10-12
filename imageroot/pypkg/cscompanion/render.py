@@ -41,7 +41,10 @@ def config_local(cfg):
     if cfg["role"] == "hub":
         # Traefik is the only client that reaches this loopback listener from
         # outside and replaces any X-Forwarded-For sent by the remote client.
-        data["api"] = {"server": {"listen_uri": "127.0.0.1:%d" % lapi, "use_forwarded_for_headers": True}}
+        # X-Forwarded-For is honoured only from loopback (Traefik); CrowdSec's
+        # default would trust it from any IPv4 source.
+        data["api"] = {"server": {"listen_uri": "127.0.0.1:%d" % lapi, "use_forwarded_for_headers": True,
+                                  "trusted_proxies": ["127.0.0.1/32", "::1/128"]}}
     return yaml_doc(data)
 
 

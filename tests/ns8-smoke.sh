@@ -31,7 +31,7 @@ wait_for 60 "nftables table" nft list table ip crowdsec-companion
 state=/var/lib/nethserver/$module/state
 grep -q 'CONTAINER_NAME=traefik' "$state/crowdsec_config/acquis.yaml" || fail "Traefik journal source not discovered"
 cat "$state/discovery.json"
-status_json="$(api-cli run "module/$module/get-status")"
+status_json="$(api-cli run "module/$module/get-companion-status")"
 echo "$status_json"
 [[ "$(echo "$status_json" | json 'd["lapi"]')" == ok ]] || fail "get-status reports no LAPI"
 # Validation rejects a role change.

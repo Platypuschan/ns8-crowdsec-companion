@@ -27,15 +27,25 @@ def read_env(path):
 
 
 def kind_of(env):
-    keys = set(env)
+    """Classify a module by its own image; image variables only as fallback.
+
+    Image variables describe every container a module runs: Loki, for
+    example, has TRAEFIK_IMAGE for its own Traefik proxy.
+    """
     image = env.get("IMAGE_URL", "").lower().rsplit("/", 1)[-1].split(":", 1)[0].split("@", 1)[0]
-    if "TRAEFIK_IMAGE" in keys or image == "traefik":
+    if image:
+        for kind in ("traefik", "samba", "gitea", "organizr"):
+            if image == kind or image.startswith(kind + "-"):
+                return kind
+        return None
+    keys = set(env)
+    if "TRAEFIK_IMAGE" in keys:
         return "traefik"
-    if "SAMBA_DC_IMAGE" in keys or image.startswith("samba"):
+    if "SAMBA_DC_IMAGE" in keys:
         return "samba"
-    if "GITEA_IMAGE" in keys or image.startswith("gitea"):
+    if "GITEA_IMAGE" in keys:
         return "gitea"
-    if keys & {"ORGANIZR_IMAGE", "ORGANIZR_RUNTIME_IMAGE"} or image.startswith("organizr"):
+    if keys & {"ORGANIZR_IMAGE", "ORGANIZR_RUNTIME_IMAGE"}:
         return "organizr"
     return None
 

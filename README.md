@@ -119,8 +119,13 @@ member's firewall at its next update (10 seconds).
 
 - Member credentials can create alerts and therefore bans. Remove a member on
   the hub when its host is compromised or retired.
-- A ban is only as precise as the client address Traefik sees. Behind an
-  additional proxy or CDN, allowlist that proxy and enforce bans there too.
+- Traefik logs the `X-Forwarded-For` header as the client address when it is
+  present. Without trusted frontend proxies (the NS8 default) Traefik drops
+  that header from clients, so the logged address is the real peer. With a
+  frontend proxy configured in NS8 (*HTTP routes → Frontend proxies*), the
+  address the proxy sends is used; a forwarded chain (`a, b`) is ignored, so a
+  proxy is never banned by mistake. The host firewall cannot block clients
+  behind a proxy; enforce bans at the proxy as well.
 - The hub API is reachable through Traefik over HTTPS only; the LAPI listener
   and the metrics endpoint are bound to `127.0.0.1`.
 - If the hub is down, members keep the bans they already have; new bans resume

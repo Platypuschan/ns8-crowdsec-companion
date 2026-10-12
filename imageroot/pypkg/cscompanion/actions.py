@@ -231,7 +231,7 @@ ACTIONS = {
     "remove-member": remove_member,
     "list-decisions": list_decisions,
     "unban": unban,
-    "get-status": get_status,
+    "get-companion-status": get_status,
     "destroy-module": destroy_module,
     "update-module": update_module,
     "restore-module": restore_module,

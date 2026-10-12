@@ -62,7 +62,7 @@ export default {
       this.loading = true;
       this.error = "";
       try {
-        this.status = await this.task("get-status");
+        this.status = await this.task("get-companion-status");
       } catch (e) {
         this.error = e.message;
       } finally {

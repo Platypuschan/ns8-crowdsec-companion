@@ -44,6 +44,8 @@ class DiscoveryTests(unittest.TestCase):
         env("home/gitea2/.config/state/environment", "MODULE_ID=gitea2\nIMAGE_URL=ghcr.io/platypuschan/gitea-reworked:0.4.2\n")
         env("home/organizr1/.config/state/environment", "MODULE_ID=organizr1\nORGANIZR_RUNTIME_IMAGE=ghcr.io/platypuschan/organizr-runtime:x\n")
         env("home/ntfy1/.config/state/environment", "MODULE_ID=ntfy1\nNTFY_IMAGE=x\n")
+        # Loki runs its own Traefik proxy; seen on a real NS8 node.
+        env("home/loki1/.config/state/environment", "MODULE_ID=loki1\nIMAGE_URL=ghcr.io/nethserver/loki:3.4.0\nTRAEFIK_IMAGE=docker.io/traefik:v3.7.11\n")
         env("home/../evil/.config/state/environment", "MODULE_ID=../x1\nGITEA_IMAGE=x\n")
         env("var/lib/nethserver/samba1/state/environment", "MODULE_ID=samba1\nSAMBA_DC_IMAGE=ghcr.io/nethserver/samba-dc:3\n")
         env("var/lib/nethserver/crowdsec-companion1/state/environment", "MODULE_ID=crowdsec-companion1\n")
@@ -51,7 +53,7 @@ class DiscoveryTests(unittest.TestCase):
     def test_kinds_and_owners(self):
         with tempfile.TemporaryDirectory() as root:
             self.tree(root)
-            uids = {"traefik1": 1001, "gitea2": 1002, "organizr1": 1003}
+            uids = {"traefik1": 1001, "gitea2": 1002, "organizr1": 1003, "loki1": 1004}
             with mock.patch.object(discovery, "uid_of", side_effect=lambda m: uids.get(m)):
                 found = discovery.discover(root)
         self.assertEqual(found["traefik"], [{"module": "traefik1", "uid": 1001, "rootfull": False}])
@@ -80,6 +82,7 @@ class RenderTests(unittest.TestCase):
         data = json.loads(render.config_local(cfg))
         self.assertEqual(data["api"]["server"]["listen_uri"], "127.0.0.1:20001")
         self.assertTrue(data["api"]["server"]["use_forwarded_for_headers"])
+        self.assertEqual(data["api"]["server"]["trusted_proxies"], ["127.0.0.1/32", "::1/128"])
         self.assertEqual(data["prometheus"]["listen_addr"], "127.0.0.1")
         self.assertEqual(data["cscli"]["hub_branch"], "master")
 
@@ -153,6 +156,19 @@ class SambaLevelTests(unittest.TestCase):
         self.assertEqual(lifecycle.samba_level("1 auth_audit:0 auth_json_audit:0"), "1 auth_audit:0 auth_json_audit:2")
         self.assertEqual(lifecycle.samba_level("3 auth_json_audit:5"), "3 auth_json_audit:5")
         self.assertEqual(lifecycle.samba_level("1"), "1 auth_json_audit:2")
+
+
+class ActionNameTests(unittest.TestCase):
+    # Actions the NS8 agent provides to every module (ns8-core
+    # core/imageroot/usr/local/agent/actions). A module directory with the same
+    # name adds a step to them; for these, a second JSON output breaks the action.
+    RESERVED = {"get-name", "get-status", "set-name", "set-note", "list-volumes",
+                "list-backup-repositories", "list-service-providers", "transfer-state",
+                "import-module", "clone-module"}
+
+    def test_no_collision_with_core_actions(self):
+        actions = Path(__file__).resolve().parents[1] / "imageroot" / "actions"
+        self.assertFalse(self.RESERVED & {p.name for p in actions.iterdir()})
 
 
 if __name__ == "__main__":
